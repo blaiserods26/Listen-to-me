@@ -1,0 +1,16 @@
+[
+  {
+    "url": "https://example.com",
+    "name": "Example Domain",
+    "selector": "body"
+  },
+  {
+    "url": "https://news.ycombinator.com",
+    "name": "Hacker News Frontpage",
+    "selector": "table#hnmain"
+  },
+  {
+    "url": "https://httpbin.org/html",
+    "name": "Httpbin HTML Demo"
+  }
+]
