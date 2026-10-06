@@ -18,6 +18,7 @@ class WebsiteMonitor:
         self.config = config
         self.notifier = notifier or EmailNotifier(config)
         self.state: Dict[str, dict] = self._load_state()
+        self.session = requests.Session()
 
     def _load_state(self) -> Dict[str, dict]:
         """Load persistent state from state file."""
@@ -41,19 +42,42 @@ class WebsiteMonitor:
             logger.error("Error writing state file '%s': %s", self.config.state_file_path, e)
 
     def fetch_webpage(self, url: str) -> str:
-        """Fetch webpage HTML with realistic headers and timeout."""
+        """Fetch webpage HTML with realistic browser headers, session, proxy, and timeout."""
         headers = {
             "User-Agent": (
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                 "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/124.0.0.0 Safari/537.36"
+                "Chrome/126.0.0.0 Safari/537.36"
             ),
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Language": "en-US,en;q=0.9",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9,hi;q=0.8",
+            "Upgrade-Insecure-Requests": "1",
+            "Sec-Ch-Ua": '"Not/A)Brand";v="8", "Chromium";v="126", "Google Chrome";v="126"',
+            "Sec-Ch-Ua-Mobile": "?0",
+            "Sec-Ch-Ua-Platform": '"Windows"',
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "none",
+            "Sec-Fetch-User": "?1",
+            "Cache-Control": "max-age=0",
         }
-        response = requests.get(url, headers=headers, timeout=20)
-        response.raise_for_status()
-        return response.text
+        proxies = None
+        if hasattr(self.config, "proxy") and self.config.proxy:
+            proxies = {"http": self.config.proxy, "https": self.config.proxy}
+
+        try:
+            response = self.session.get(url, headers=headers, timeout=25, proxies=proxies)
+            response.raise_for_status()
+            return response.text
+        except requests.exceptions.HTTPError as e:
+            if e.response is not None and e.response.status_code == 403:
+                logger.error(
+                    "HTTP 403 Forbidden accessing %s. "
+                    "If running on GitHub Actions or cloud hosting, this site likely blocks non-Indian or cloud datacenter IPs via WAF (e.g. Azure Application Gateway). "
+                    "Solutions: (1) Use a GitHub Self-Hosted runner on a local machine, or (2) configure an Indian proxy via PROXY/HTTPS_PROXY in GitHub Secrets.",
+                    url
+                )
+            raise
 
     def extract_monitored_content(
         self,

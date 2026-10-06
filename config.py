@@ -36,6 +36,7 @@ class Config:
     check_interval_seconds: int = int(os.getenv("CHECK_INTERVAL_SECONDS", "3600"))
     state_file_path: str = os.getenv("STATE_FILE_PATH", "state.json")
     sites_file_path: str = os.getenv("SITES_FILE_PATH", "sites.json")
+    proxy: Optional[str] = os.getenv("PROXY") or os.getenv("HTTPS_PROXY") or os.getenv("HTTP_PROXY") or None
 
     # Explicit list of sites (configured dynamically or loaded from file/env)
     sites: List[MonitoredSite] = field(default_factory=list)

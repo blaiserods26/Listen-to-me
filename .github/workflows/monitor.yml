@@ -51,6 +51,7 @@ jobs:
           EMAIL_SENDER: ${{ secrets.EMAIL_SENDER || secrets.SMTP_USERNAME }}
           EMAIL_RECIPIENT: ${{ secrets.EMAIL_RECIPIENT }}
           EMAIL_SUBJECT_PREFIX: ${{ vars.EMAIL_SUBJECT_PREFIX || '[Web-Listener Alert]' }}
+          PROXY: ${{ secrets.PROXY || vars.PROXY }}
         run: |
           python main.py --once
 
